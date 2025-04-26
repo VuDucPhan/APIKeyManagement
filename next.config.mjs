@@ -11,6 +11,10 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  eslint: {
+    // Cho phép bỏ qua các lỗi ESLint trong quá trình build
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;

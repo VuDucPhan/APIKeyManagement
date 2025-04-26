@@ -398,7 +398,7 @@ export default function APIKeysPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700"
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  * If the combined usage of all your keys exceeds your plan's limit, all requests will be rejected.
+                  * If the combined usage of all your keys exceeds your plan&apos;s limit, all requests will be rejected.
                 </p>
               </div>
               
@@ -435,7 +435,7 @@ export default function APIKeysPage() {
                 </svg>
               </button>
               
-              <h2 className="text-xl font-semibold mb-4 text-center">Delete API Key '{deleteKeyData.name}'</h2>
+              <h2 className="text-xl font-semibold mb-4 text-center">Delete API Key &apos;{deleteKeyData.name}&apos;</h2>
               
               <p className="text-gray-600 dark:text-gray-400 text-center mb-3">
                 Are you sure you want to delete this API key? It will be invalidated and you will need to update it in your applications.
@@ -567,7 +567,7 @@ export default function APIKeysPage() {
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">Tavily Expert</h2>
           <p className="text-gray-600 mb-4">
-            Your expert is a specialized agent, always up to date with Tavily's latest documentation and best practices. To be used
+            Your expert is a specialized agent, always up to date with Tavily&apos;s latest documentation and best practices. To be used
             in AI-native IDEs to accurately implement and test Tavily tools within your application.
           </p>
           <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
