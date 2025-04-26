@@ -1,21 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ClipboardIcon, EyeIcon, EyeSlashIcon, RefreshIcon } from "./icons";
 
 export default function APIKeysPage() {
-  const [apiKeys, setApiKeys] = useState([
-    {
-      id: "1",
-      name: "default",
-      type: "dev",
-      usage: 0,
-      key: "tvly-dev-abcdefghijklmnopqrstuvwxyz1234",
-      createdAt: "2025-04-26T10:30:00Z",
-      lastUsed: "2025-04-26T10:30:00Z",
-    },
-  ]);
+  const [apiKeys, setApiKeys] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [showKey, setShowKey] = useState({});
   const [copied, setCopied] = useState({});
@@ -23,37 +15,112 @@ export default function APIKeysPage() {
   const [newKeyName, setNewKeyName] = useState("");
   const [keyType, setKeyType] = useState("development");
   const [monthlyLimit, setMonthlyLimit] = useState("1000");
+  const [deleteKeyData, setDeleteKeyData] = useState(null); // {id, name} của key cần xóa
+
+  // Fetch API keys từ Supabase
+  useEffect(() => {
+    fetchApiKeys();
+  }, []);
+
+  const fetchApiKeys = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/api-keys');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Không thể tải dữ liệu');
+      }
+      
+      const data = await response.json();
+      setApiKeys(data);
+      setError(null);
+    } catch (err) {
+      console.error('Lỗi khi tải API keys:', err);
+      setError(err.message || 'Lỗi kết nối với Supabase. Vui lòng kiểm tra cấu hình.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleShowKey = (id) => {
-    setShowKey((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    if (!showKey[id]) {
+      // Khi chuyển từ ẩn sang hiện, gọi API để lấy key đầy đủ
+      fetchFullKey(id);
+    } else {
+      // Khi chuyển từ hiện sang ẩn, chỉ cần cập nhật state
+      setShowKey((prev) => ({
+        ...prev,
+        [id]: false,
+      }));
+    }
   };
 
-  const copyToClipboard = (id, key) => {
-    navigator.clipboard.writeText(key);
-    setCopied({ [id]: true });
-    setTimeout(() => {
-      setCopied({});
-    }, 2000);
+  const fetchFullKey = async (id) => {
+    try {
+      const response = await fetch(`/api/api-keys/full/${id}`);
+      
+      if (!response.ok) {
+        throw new Error('Không thể lấy API key đầy đủ');
+      }
+      
+      const data = await response.json();
+      
+      // Cập nhật API key đầy đủ trong mảng apiKeys
+      setApiKeys(apiKeys.map(key => 
+        key.id === id ? { ...key, key: data.key } : key
+      ));
+      
+      // Đánh dấu key này là đang hiển thị
+      setShowKey((prev) => ({
+        ...prev,
+        [id]: true,
+      }));
+    } catch (err) {
+      console.error('Lỗi khi lấy API key:', err);
+      alert(err.message);
+    }
   };
 
-  const createNewKey = () => {
+  const copyToClipboard = async (id, key) => {
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopied({ [id]: true });
+      setTimeout(() => {
+        setCopied({});
+      }, 2000);
+    } catch (err) {
+      console.error('Lỗi khi sao chép:', err);
+    }
+  };
+
+  const createNewKey = async () => {
     if (!newKeyName.trim()) return;
     
-    const newKey = {
-      id: Math.random().toString(36).substring(2, 9),
-      name: newKeyName,
-      type: keyType === "development" ? "dev" : "prod",
-      usage: 0,
-      key: `tvly-${keyType === "development" ? "dev" : "prod"}-${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
-      createdAt: new Date().toISOString(),
-      lastUsed: new Date().toISOString(),
-    };
-    
-    setApiKeys([...apiKeys, newKey]);
-    resetCreateForm();
+    try {
+      const response = await fetch('/api/api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newKeyName,
+          type: keyType === 'development' ? 'dev' : 'prod'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Không thể tạo API key');
+      }
+      
+      const newKey = await response.json();
+      setApiKeys([newKey, ...apiKeys]);
+      resetCreateForm();
+      
+      // Không hiển thị thông báo alert nữa
+    } catch (err) {
+      console.error('Lỗi khi tạo API key:', err);
+      alert(`Lỗi: ${err.message}`);
+    }
   };
 
   const resetCreateForm = () => {
@@ -63,19 +130,56 @@ export default function APIKeysPage() {
     setIsCreating(false);
   };
 
-  const regenerateKey = (id) => {
-    setApiKeys(apiKeys.map(key => 
-      key.id === id 
-        ? {...key, key: `tvly-${key.type}-${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`} 
-        : key
-    ));
+  const regenerateKey = async (id) => {
+    try {
+      const response = await fetch(`/api/api-keys/${id}`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Không thể tạo lại API key');
+      }
+      
+      const updatedKey = await response.json();
+      setApiKeys(apiKeys.map(key => key.id === id ? updatedKey : key));
+      
+      // Không hiển thị thông báo alert nữa
+    } catch (err) {
+      console.error('Lỗi khi tạo lại API key:', err);
+      alert(`Lỗi: ${err.message}`);
+    }
   };
 
-  const deleteKey = (id) => {
-    setApiKeys(apiKeys.filter(key => key.id !== id));
+  const deleteKey = async () => {
+    if (!deleteKeyData) return;
+    
+    try {
+      const response = await fetch(`/api/api-keys/${deleteKeyData.id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Không thể xóa API key');
+      }
+      
+      setApiKeys(apiKeys.filter(key => key.id !== deleteKeyData.id));
+      setDeleteKeyData(null); // Đóng popup sau khi xóa thành công
+    } catch (err) {
+      console.error('Lỗi khi xóa API key:', err);
+      alert(`Lỗi: ${err.message}`);
+    }
+  };
+
+  // Hiển thị popup xác nhận xóa
+  const confirmDeleteKey = (id, name) => {
+    setDeleteKeyData({ id, name });
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Chưa sử dụng';
+    
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
@@ -85,6 +189,32 @@ export default function APIKeysPage() {
       minute: '2-digit',
     }).format(date);
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-8 max-w-6xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-xl">Đang tải...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-6 py-8 max-w-6xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-xl text-red-500">Lỗi: {error}</div>
+          <button 
+            onClick={fetchApiKeys}
+            className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-6xl">
@@ -259,96 +389,150 @@ export default function APIKeysPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                NAME
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                TYPE
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                USAGE
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                KEY
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                OPTIONS
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
-            {apiKeys.map((apiKey) => (
-              <tr key={apiKey.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {apiKey.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {apiKey.type}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {apiKey.usage}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="flex-grow">
-                      {showKey[apiKey.id] ? apiKey.key : apiKey.key.substring(0, 10) + "*".repeat(30)}
-                    </span>
-                    <button
-                      onClick={() => toggleShowKey(apiKey.id)}
-                      className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                      aria-label={showKey[apiKey.id] ? "Ẩn API key" : "Hiện API key"}
-                    >
-                      {showKey[apiKey.id] ? <EyeSlashIcon /> : <EyeIcon />}
-                    </button>
-                    <button
-                      onClick={() => copyToClipboard(apiKey.id, apiKey.key)}
-                      className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                      aria-label="Sao chép"
-                    >
-                      <ClipboardIcon />
-                    </button>
-                    {copied[apiKey.id] && (
-                      <span className="text-xs text-green-600 dark:text-green-400">Đã sao chép!</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end gap-4">
-                    <button
-                      onClick={() => regenerateKey(apiKey.id)}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      <RefreshIcon />
-                    </button>
-                    <button
-                      onClick={() => {}}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => deleteKey(apiKey.id)}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
+      {/* Popup xác nhận xóa API key */}
+      {deleteKeyData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setDeleteKeyData(null)} 
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            
+            <h2 className="text-xl font-semibold mb-4 text-center">Delete API Key '{deleteKeyData.name}'</h2>
+            
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-3">
+              Are you sure you want to delete this API key? It will be invalidated and you will need to update it in your applications.
+            </p>
+            
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+              This action is irreversible.
+            </p>
+            
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={deleteKey}
+                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setDeleteKeyData(null)}
+                className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {apiKeys.length === 0 ? (
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
+          <p className="text-gray-500 mb-4">Chưa có API key nào. Hãy tạo key đầu tiên của bạn.</p>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Tạo API Key
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  NAME
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  TYPE
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  USAGE
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  KEY
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  OPTIONS
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+              {apiKeys.map((apiKey) => (
+                <tr key={apiKey.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {apiKey.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {apiKey.type}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {apiKey.usage}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-grow">
+                        {showKey[apiKey.id] ? apiKey.key : apiKey.key.substring(0, 8) + "..............."}
+                      </span>
+                      <button
+                        onClick={() => toggleShowKey(apiKey.id)}
+                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        aria-label={showKey[apiKey.id] ? "Ẩn API key" : "Hiện API key"}
+                      >
+                        {showKey[apiKey.id] ? <EyeSlashIcon /> : <EyeIcon />}
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(apiKey.id, apiKey.key)}
+                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        aria-label="Sao chép"
+                      >
+                        <ClipboardIcon />
+                      </button>
+                      {copied[apiKey.id] && (
+                        <span className="text-xs text-green-600 dark:text-green-400">Đã sao chép!</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-4">
+                      <button
+                        onClick={() => regenerateKey(apiKey.id)}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <RefreshIcon />
+                      </button>
+                      <button
+                        onClick={() => {}}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => confirmDeleteKey(apiKey.id, apiKey.name)}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       
       {/* Phần Tavily Expert */}
       <div className="mt-8">

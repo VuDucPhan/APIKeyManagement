@@ -1,22 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# API Key Management App
 
-## Getting Started
+Ứng dụng quản lý API key được xây dựng với Next.js và Supabase.
 
-First, run the development server:
+## Tính năng
+
+- Quản lý API keys: xem, tạo mới, cập nhật, xóa
+- Phân quyền API keys theo loại: development và production
+- Giao diện người dùng hiện đại với Tailwind CSS
+
+## Yêu cầu
+
+- Node.js phiên bản 18 trở lên
+- Tài khoản Supabase
+
+## Cài đặt
+
+1. Clone repository:
+
+```bash
+git clone <repository-url>
+cd api-key-management
+```
+
+2. Cài đặt dependencies:
+
+```bash
+npm install
+```
+
+3. Thiết lập Supabase:
+
+   - Đăng ký tài khoản tại [Supabase](https://supabase.com)
+   - Tạo project mới
+   - Tạo bảng `api_keys` với schema sau:
+
+   ```sql
+   create table api_keys (
+     id uuid default uuid_generate_v4() primary key,
+     name text not null,
+     type text not null,
+     key text not null unique,
+     usage integer default 0,
+     created_at timestamp with time zone default now(),
+     last_used_at timestamp with time zone
+   );
+   ```
+
+4. Cấu hình biến môi trường:
+
+   - Tạo file `.env.local` tại thư mục gốc
+   - Thêm các biến môi trường sau:
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-url.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+## Chạy ứng dụng
+
+### Dev
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Production
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm start
+```
+
+Truy cập ứng dụng tại [http://localhost:3000](http://localhost:3000).
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
