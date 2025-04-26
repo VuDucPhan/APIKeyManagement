@@ -4,7 +4,7 @@ import { supabase } from '../../../../lib/supabase';
 // Lấy thông tin của 1 API key
 export async function GET(request, { params }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const { data, error } = await supabase
       .from('api_keys')
       .select('*')
@@ -34,7 +34,7 @@ export async function GET(request, { params }) {
 // Cập nhật thông tin API key
 export async function PATCH(request, { params }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const body = await request.json();
     const { name } = body; // Chỉ cho phép cập nhật tên
 
@@ -71,7 +71,7 @@ export async function PATCH(request, { params }) {
 // Tạo lại API key
 export async function PUT(request, { params }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     
     // Lấy thông tin API key hiện tại
     const { data: existingKey, error: fetchError } = await supabase
@@ -120,7 +120,7 @@ export async function PUT(request, { params }) {
 // Xóa API key
 export async function DELETE(request, { params }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const { error } = await supabase
       .from('api_keys')
       .delete()

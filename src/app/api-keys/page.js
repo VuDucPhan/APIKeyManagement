@@ -323,10 +323,10 @@ export default function APIKeysPage() {
 
         {/* Popup tạo mới API key */}
         {isCreating && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 animate-fade-in">
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 animate-fade-in">
               <h2 className="text-xl font-semibold mb-4">Create a new API key</h2>
-              <p className="text-sm text-gray-500 mb-6">Enter a name and limit for the new API key.</p>
+              <p className="text-sm text-gray-600 mb-6">Enter a name and limit for the new API key.</p>
               
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">
@@ -337,7 +337,7 @@ export default function APIKeysPage() {
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
                   placeholder="Key Name"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
               </div>
               
@@ -346,73 +346,75 @@ export default function APIKeysPage() {
                   Key Type — <span className="text-gray-500 font-normal">Choose the environment for this key</span>
                 </label>
                 
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  <button
+                <div className="grid grid-cols-2 gap-4 mb-2">
+                  <div 
                     onClick={() => setKeyType("production")}
-                    className={`p-3 border rounded-md flex items-center justify-center ${
+                    className={`p-4 border rounded-md flex flex-col items-center cursor-pointer ${
                       keyType === "production" 
                         ? "bg-green-50 border-green-200 text-green-700"
                         : "border-gray-200 text-gray-500 hover:bg-gray-50"
                     }`}
                   >
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M16 12l-4 4-4-4" />
-                      </svg>
-                      <span className="text-xs font-medium">Production</span>
-                      <span className="text-xs mt-1">Rate limited to 1,000 requests/minute</span>
-                    </div>
-                  </button>
+                    <svg className="w-5 h-5 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 12h14" />
+                      <path d="M12 5v14" />
+                    </svg>
+                    <div className="text-sm font-medium">Production</div>
+                    <div className="text-xs text-center mt-1">Rate limited to 1,000 requests/minute</div>
+                  </div>
                   
-                  <button
+                  <div
                     onClick={() => setKeyType("development")}
-                    className={`p-3 border rounded-md flex items-center justify-center ${
+                    className={`p-4 border rounded-md flex flex-col items-center cursor-pointer ${
                       keyType === "development" 
                         ? "bg-blue-50 border-blue-200 text-blue-700" 
                         : "border-gray-200 text-gray-500 hover:bg-gray-50"
                     }`}
                   >
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2v6m0 12v2" />
-                        <path d="M17.5 6.5L14 10" />
-                        <path d="M19 12h-2" />
-                        <path d="M15.5 17.5L12 14" />
-                        <path d="M7 12H4" />
-                        <path d="M6.5 6.5L10 10" />
-                      </svg>
-                      <span className="text-xs font-medium">Development</span>
-                      <span className="text-xs mt-1">Rate limited to 100 requests/minute</span>
-                    </div>
-                  </button>
+                    <svg className="w-5 h-5 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M8 9l3 3-3 3" />
+                      <path d="M13 15h3a2 2 0 0 0 0-4h-3v-2h3a2 2 0 0 1 0 4h-3v2z" />
+                    </svg>
+                    <div className="text-sm font-medium">Development</div>
+                    <div className="text-xs text-center mt-1">Rate limited to 100 requests/minute</div>
+                  </div>
                 </div>
               </div>
               
               <div className="mb-6">
-                <label className="block text-sm font-medium mb-1">Limit monthly usage*</label>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="limit-monthly"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                    checked={true}
+                  />
+                  <label htmlFor="limit-monthly" className="ml-2 block text-sm font-medium">
+                    Limit monthly usage*
+                  </label>
+                </div>
                 <input
                   type="text"
                   value={monthlyLimit}
                   onChange={(e) => setMonthlyLimit(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700"
+                  className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
                 <p className="text-xs text-gray-500 mt-2">
                   * If the combined usage of all your keys exceeds your plan&apos;s limit, all requests will be rejected.
                 </p>
               </div>
               
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between gap-2">
                 <button
                   onClick={resetCreateForm}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createNewKey}
                   disabled={!newKeyName.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:bg-blue-400"
+                  className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:bg-blue-400"
                 >
                   Create
                 </button>
@@ -424,7 +426,7 @@ export default function APIKeysPage() {
         {/* Popup xác nhận xóa API key */}
         {deleteKeyData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
               <button 
                 onClick={() => setDeleteKeyData(null)} 
                 className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
@@ -437,11 +439,11 @@ export default function APIKeysPage() {
               
               <h2 className="text-xl font-semibold mb-4 text-center">Delete API Key &apos;{deleteKeyData.name}&apos;</h2>
               
-              <p className="text-gray-600 dark:text-gray-400 text-center mb-3">
+              <p className="text-gray-600 text-center mb-3">
                 Are you sure you want to delete this API key? It will be invalidated and you will need to update it in your applications.
               </p>
               
-              <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+              <p className="text-gray-600 text-center mb-6">
                 This action is irreversible.
               </p>
               
