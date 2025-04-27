@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import LoginButton from "../components/auth/LoginButton";
 
 export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <header className="absolute top-0 left-0 right-0 flex justify-end p-4">
+        <LoginButton />
+      </header>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image
           className="dark:invert"
@@ -19,6 +23,13 @@ export default function Home() {
             <Link href="/api-keys" className="text-blue-600 dark:text-blue-400 hover:underline">
               API Keys
             </Link>
+          </li>
+          <li className="mb-2 tracking-[-.01em]">
+            Trang được{" "}
+            <Link href="/protected/new" className="text-blue-600 dark:text-blue-400 hover:underline">
+              bảo vệ
+            </Link>
+            {" "}bởi xác thực
           </li>
           <li className="tracking-[-.01em]">
             Get started by editing{" "}

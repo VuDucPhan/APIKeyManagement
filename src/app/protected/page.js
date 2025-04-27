@@ -3,6 +3,9 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "../api-keys/Sidebar";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]/route";
+import Link from "next/link";
 
 // Component riêng để xử lý phần phụ thuộc vào useSearchParams
 function ProtectedContent() {
@@ -212,35 +215,27 @@ function ProtectedContent() {
 }
 
 // Component chính để render trang protected
-export default function ProtectedPage() {
+export default async function ProtectedPage() {
+  const session = await getServerSession(authOptions);
+
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="ml-60 flex-1 p-6 relative">
-        {/* Thanh điều hướng */}
-        <div className="mb-4 flex items-center text-sm text-gray-500">
-          <span>Pages</span>
-          <span className="mx-2">/</span>
-          <span>Protected</span>
+    <div className="flex min-h-screen flex-col items-center justify-center p-8">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
+        <h1 className="text-2xl font-bold">Trang Được Bảo Vệ</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Bạn đã đăng nhập với tên: <span className="font-medium">{session?.user?.name}</span>
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Email: <span className="font-medium">{session?.user?.email}</span>
+        </p>
+        <div className="pt-4">
+          <Link
+            href="/"
+            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Quay về trang chủ
+          </Link>
         </div>
-
-        {/* Tiêu đề trang */}
-        <h1 className="text-3xl font-bold mb-6">Trang được bảo vệ</h1>
-
-        {/* Bọc nội dung phụ thuộc useSearchParams trong Suspense */}
-        <Suspense fallback={
-          <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
-            <div className="flex flex-col items-center justify-center py-8">
-              <svg className="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p className="text-lg text-gray-700">Đang tải...</p>
-            </div>
-          </div>
-        }>
-          <ProtectedContent />
-        </Suspense>
       </div>
     </div>
   );
