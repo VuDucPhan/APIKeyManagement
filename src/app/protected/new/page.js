@@ -3,6 +3,9 @@ import { authOptions } from "../../api/auth/[...nextauth]/route";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+// Make this a dynamic route to fix the error
+export const dynamic = 'force-dynamic';
+
 export default async function ProtectedPage() {
   try {
     const session = await getServerSession(authOptions);
@@ -14,9 +17,9 @@ export default async function ProtectedPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
-          <h1 className="text-2xl font-bold">Trang Được Bảo Vệ</h1>
+          <h1 className="text-2xl font-bold">Protected Page</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Bạn đã đăng nhập với tên: <span className="font-medium">{session?.user?.name}</span>
+            You are logged in as: <span className="font-medium">{session?.user?.name}</span>
           </p>
           <p className="text-gray-600 dark:text-gray-400">
             Email: <span className="font-medium">{session?.user?.email}</span>
@@ -26,28 +29,28 @@ export default async function ProtectedPage() {
               href="/"
               className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
-              Quay về trang chủ
+              Return to home page
             </Link>
           </div>
         </div>
       </div>
     );
   } catch (error) {
-    console.error('Lỗi xác thực:', error);
+    console.error('Authentication error:', error);
     
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
-          <h1 className="text-2xl font-bold text-red-600">Đã xảy ra lỗi xác thực</h1>
+          <h1 className="text-2xl font-bold text-red-600">Authentication Error</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Vui lòng đảm bảo bạn đã cấu hình NextAuth và Google OAuth chính xác.
+            Please ensure you have correctly configured NextAuth and Google OAuth.
           </p>
           <div className="pt-4">
             <Link
               href="/"
               className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
-              Quay về trang chủ
+              Return to home page
             </Link>
           </div>
         </div>

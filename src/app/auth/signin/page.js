@@ -3,8 +3,9 @@
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
 
-export default function SignIn() {
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -14,9 +15,9 @@ export default function SignIn() {
     <div className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Đăng nhập</h1>
+          <h1 className="text-2xl font-bold">Sign In</h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Đăng nhập để sử dụng tất cả tính năng của Dandi
+            Sign in to use all features of Duc Github Analyzer
           </p>
         </div>
 
@@ -39,17 +40,41 @@ export default function SignIn() {
               width={20}
               height={20}
             />
-            <span>Đăng nhập với Google</span>
+            <span>Sign in with Google</span>
           </button>
           
           <button
             onClick={() => router.push("/")}
             className="w-full text-center text-sm text-gray-600 hover:underline dark:text-gray-400"
           >
-            Quay lại trang chủ
+            Return to home page
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback
+function SignInLoading() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-8">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Sign In</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Loading...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={<SignInLoading />}>
+      <SignInContent />
+    </Suspense>
   );
 } 
