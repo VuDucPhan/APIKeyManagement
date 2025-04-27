@@ -208,7 +208,7 @@ export default function Home() {
                 href="/auth/signup" 
                 className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center block"
               >
-                Buy now
+                Coming soon
               </Link>
             </div>
             
@@ -257,7 +257,7 @@ export default function Home() {
                 href="/contact" 
                 className="w-full py-3 px-4 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 dark:hover:bg-blue-900/30 transition text-center block"
               >
-                Contact sales
+                Coming soon
               </Link>
             </div>
           </div>

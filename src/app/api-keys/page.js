@@ -2,10 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
 import { ClipboardIcon, EyeIcon, EyeSlashIcon, RefreshIcon } from "./icons";
 import Sidebar from "./Sidebar";
 
 export default function APIKeysPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [apiKeys, setApiKeys] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,27 +23,84 @@ export default function APIKeysPage() {
   const [monthlyLimit, setMonthlyLimit] = useState("1000");
   const [deleteKeyData, setDeleteKeyData] = useState(null); // {id, name} của key cần xóa
 
+  // Kiểm tra phiên đăng nhập
+  useEffect(() => {
+    try {
+      if (status === 'unauthenticated') {
+        console.log('Người dùng chưa đăng nhập, chuyển hướng về trang chủ');
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Lỗi khi chuyển hướng:', error);
+    }
+  }, [status, router]);
+
   // Fetch API keys từ Supabase
   useEffect(() => {
-    fetchApiKeys();
-  }, []);
+    if (status === 'authenticated') {
+      console.log('Người dùng đã đăng nhập, bắt đầu tải API keys');
+      fetchApiKeys().catch((error) => {
+        console.error('Lỗi trong fetchApiKeys:', error);
+        // Trong môi trường development, hiển thị dữ liệu mẫu nếu API không hoạt động
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Sử dụng dữ liệu mẫu trong môi trường development');
+          setApiKeys([
+            {
+              id: 'sample-1',
+              name: 'API Key mẫu 1',
+              type: 'dev',
+              key: 'tvly-dev-xxxx...xxxx',
+              usage: 0,
+              created_at: new Date().toISOString(),
+              last_used_at: null
+            },
+            {
+              id: 'sample-2',
+              name: 'API Key mẫu 2',
+              type: 'prod',
+              key: 'tvly-prod-xxxx...xxxx',
+              usage: 10,
+              created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+              last_used_at: new Date().toISOString()
+            }
+          ]);
+          setIsLoading(false);
+        }
+      });
+    }
+  }, [status]);
 
   const fetchApiKeys = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/api-keys');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Không thể tải dữ liệu');
+      // Kiểm tra xem API endpoint đã sẵn sàng chưa
+      try {
+        const response = await fetch('/api/api-keys', {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Không thể tải dữ liệu API keys');
+        }
+        
+        const data = await response.json();
+        setApiKeys(data);
+        setError(null);
+      } catch (err) {
+        console.error('Lỗi khi tải API keys:', err);
+        
+        // Kiểm tra lỗi cụ thể
+        if (err.message.includes('Failed to fetch') || err.message.includes('Network Error')) {
+          setError('Không thể kết nối đến API. Vui lòng kiểm tra kết nối mạng hoặc cài đặt Supabase.');
+        } else {
+          setError(err.message || 'Lỗi kết nối với Supabase. Vui lòng kiểm tra cấu hình.');
+        }
       }
-      
-      const data = await response.json();
-      setApiKeys(data);
-      setError(null);
-    } catch (err) {
-      console.error('Lỗi khi tải API keys:', err);
-      setError(err.message || 'Lỗi kết nối với Supabase. Vui lòng kiểm tra cấu hình.');
     } finally {
       setIsLoading(false);
     }
@@ -193,6 +254,20 @@ export default function APIKeysPage() {
       minute: '2-digit',
     }).format(date);
   };
+
+  // Hiển thị màn hình loading trong quá trình kiểm tra phiên đăng nhập
+  if (status === 'loading') {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-xl">Đang tải...</div>
+      </div>
+    );
+  }
+
+  // Nếu chưa đăng nhập, không hiển thị nội dung
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   // Return component
   if (isLoading) {
