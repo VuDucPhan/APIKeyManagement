@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "../api-keys/Sidebar";
 import Link from "next/link";
 
-export default function ProtectedPage() {
+// Component riêng để sử dụng useSearchParams
+function ProtectedContent() {
   const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -250,5 +251,42 @@ export default function ProtectedPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Component loading khi suspense
+function ProtectedLoading() {
+  return (
+    <div className="flex">
+      <Sidebar />
+      <div className="ml-60 flex-1 p-6">
+        <div className="mb-4 flex items-center text-sm text-gray-500">
+          <span>Pages</span>
+          <span className="mx-2">/</span>
+          <span>Protected</span>
+        </div>
+
+        <h1 className="text-3xl font-bold mb-6">Trang Được Bảo Vệ</h1>
+
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
+          <div className="flex flex-col items-center justify-center py-8">
+            <svg className="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-lg text-gray-700">Đang tải...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Export component chính với Suspense
+export default function ProtectedPage() {
+  return (
+    <Suspense fallback={<ProtectedLoading />}>
+      <ProtectedContent />
+    </Suspense>
   );
 } 
