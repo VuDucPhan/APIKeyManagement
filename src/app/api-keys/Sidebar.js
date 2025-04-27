@@ -41,7 +41,7 @@ export default function Sidebar() {
             <span className="ml-3">Overview</span>
           </Link>
           
-          <Link href="/" className="flex items-center px-2 py-2 text-sm text-gray-800 rounded-md hover:bg-gray-100">
+          <Link href="/playground" className="flex items-center px-2 py-2 text-sm text-gray-800 rounded-md hover:bg-gray-100">
             <ApiPlaygroundIcon />
             <span className="ml-3">API Playground</span>
           </Link>
