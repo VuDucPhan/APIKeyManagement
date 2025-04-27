@@ -1,24 +1,39 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "../api-keys/Sidebar";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
 import Link from "next/link";
 
-// Component riêng để xử lý phần phụ thuộc vào useSearchParams
-function ProtectedContent() {
+export default function ProtectedPage() {
   const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
   const [keyData, setKeyData] = useState(null);
+  const [session, setSession] = useState(null);
   
   const router = useRouter();
   const searchParams = useSearchParams();
   const apiKey = searchParams.get("key");
+
+  useEffect(() => {
+    // Lấy thông tin phiên người dùng nếu cần
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          setSession(data);
+        }
+      } catch (error) {
+        console.error("Không thể lấy thông tin phiên:", error);
+      }
+    };
+    
+    checkSession();
+  }, []);
 
   useEffect(() => {
     if (!apiKey) {
@@ -85,101 +100,133 @@ function ProtectedContent() {
   };
 
   return (
-    <>
-      {/* Hiển thị thông báo */}
-      {showNotification && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center ${
-          notificationType === "success" ? "bg-green-600" : "bg-red-600"
-        } text-white py-2 px-4 rounded shadow-lg`}>
-          <svg 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            className="mr-2"
-          >
-            {notificationType === "success" ? (
-              <path d="M20 6L9 17l-5-5"></path>
-            ) : (
-              <>
+    <div className="flex">
+      <Sidebar />
+      <div className="ml-60 flex-1 p-6">
+        {/* Thanh điều hướng */}
+        <div className="mb-4 flex items-center text-sm text-gray-500">
+          <span>Pages</span>
+          <span className="mx-2">/</span>
+          <span>Protected</span>
+        </div>
+
+        <h1 className="text-3xl font-bold mb-6">Trang Được Bảo Vệ</h1>
+
+        {/* Hiển thị thông báo */}
+        {showNotification && (
+          <div className={`fixed top-4 right-4 z-50 flex items-center ${
+            notificationType === "success" ? "bg-green-600" : "bg-red-600"
+          } text-white py-2 px-4 rounded shadow-lg`}>
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              className="mr-2"
+            >
+              {notificationType === "success" ? (
+                <path d="M20 6L9 17l-5-5"></path>
+              ) : (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </>
+              )}
+            </svg>
+            <span>{notificationMessage}</span>
+            <button 
+              onClick={() => setShowNotification(false)}
+              className="ml-3 text-white hover:text-white/80"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
-              </>
-            )}
-          </svg>
-          <span>{notificationMessage}</span>
-          <button 
-            onClick={() => setShowNotification(false)}
-            className="ml-3 text-white hover:text-white/80"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-      )}
-
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
-        {isValidating ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <svg className="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p className="text-lg text-gray-700">Đang xác thực API key...</p>
-          </div>
-        ) : isValid ? (
-          <div className="text-center py-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
-                <path d="M20 6L9 17l-5-5"></path>
               </svg>
+            </button>
+          </div>
+        )}
+
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
+          {isValidating ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <svg className="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="text-lg text-gray-700">Đang xác thực API key...</p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Truy cập được cấp phép</h2>
-            <p className="text-gray-600 mb-6">
-              API key của bạn hợp lệ và bạn có thể truy cập vào nội dung được bảo vệ này.
-            </p>
-            
-            <div className="bg-gray-50 p-4 rounded-lg text-left">
-              <h3 className="font-medium text-gray-700 mb-4">Thông tin API Key của bạn:</h3>
-              <div className="space-y-3">
-                <div className="flex border-b border-gray-200 pb-2">
-                  <span className="font-medium text-gray-600 w-32">Key:</span>
-                  <span className="font-mono text-gray-800">{apiKey?.slice(0, 4)}...{apiKey?.slice(-4)}</span>
-                </div>
-                {keyData && (
-                  <>
-                    <div className="flex border-b border-gray-200 pb-2">
-                      <span className="font-medium text-gray-600 w-32">Tên:</span>
-                      <span className="text-gray-800">{keyData.name}</span>
-                    </div>
-                    <div className="flex border-b border-gray-200 pb-2">
-                      <span className="font-medium text-gray-600 w-32">Loại:</span>
-                      <span className="text-gray-800">
-                        {keyData.type === 'dev' ? 'Development' : 'Production'}
-                      </span>
-                    </div>
-                    <div className="flex border-b border-gray-200 pb-2">
-                      <span className="font-medium text-gray-600 w-32">Số lần sử dụng:</span>
-                      <span className="text-gray-800">{keyData.usage || 0}</span>
-                    </div>
-                    <div className="flex border-b border-gray-200 pb-2">
-                      <span className="font-medium text-gray-600 w-32">Ngày tạo:</span>
-                      <span className="text-gray-800">{formatDate(keyData.createdAt)}</span>
-                    </div>
-                  </>
-                )}
-                <div className="flex pt-1">
-                  <span className="font-medium text-gray-600 w-32">Trạng thái:</span>
-                  <span className="text-green-600 font-medium">Đang hoạt động</span>
+          ) : isValid ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Truy cập được cấp phép</h2>
+              <p className="text-gray-600 mb-6">
+                API key của bạn hợp lệ và bạn có thể truy cập vào nội dung được bảo vệ này.
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg text-left">
+                <h3 className="font-medium text-gray-700 mb-4">Thông tin API Key của bạn:</h3>
+                <div className="space-y-3">
+                  <div className="flex border-b border-gray-200 pb-2">
+                    <span className="font-medium text-gray-600 w-32">Key:</span>
+                    <span className="font-mono text-gray-800">{apiKey?.slice(0, 4)}...{apiKey?.slice(-4)}</span>
+                  </div>
+                  {keyData && (
+                    <>
+                      <div className="flex border-b border-gray-200 pb-2">
+                        <span className="font-medium text-gray-600 w-32">Tên:</span>
+                        <span className="text-gray-800">{keyData.name}</span>
+                      </div>
+                      <div className="flex border-b border-gray-200 pb-2">
+                        <span className="font-medium text-gray-600 w-32">Loại:</span>
+                        <span className="text-gray-800">
+                          {keyData.type === 'dev' ? 'Development' : 'Production'}
+                        </span>
+                      </div>
+                      <div className="flex border-b border-gray-200 pb-2">
+                        <span className="font-medium text-gray-600 w-32">Số lần sử dụng:</span>
+                        <span className="text-gray-800">{keyData.usage || 0}</span>
+                      </div>
+                      <div className="flex border-b border-gray-200 pb-2">
+                        <span className="font-medium text-gray-600 w-32">Ngày tạo:</span>
+                        <span className="text-gray-800">{formatDate(keyData.createdAt)}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex pt-1">
+                    <span className="font-medium text-gray-600 w-32">Trạng thái:</span>
+                    <span className="text-green-600 font-medium">Đang hoạt động</span>
+                  </div>
                 </div>
               </div>
+              
+              <div className="mt-8">
+                <button
+                  onClick={() => router.push("/playground")}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
+                >
+                  Quay lại Playground
+                </button>
+              </div>
             </div>
-            
-            <div className="mt-8">
+          ) : (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Truy cập bị từ chối</h2>
+              <p className="text-gray-600 mb-6">
+                API key không hợp lệ hoặc đã hết hạn. Vui lòng kiểm tra lại hoặc tạo một key mới.
+              </p>
+              
               <button
                 onClick={() => router.push("/playground")}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
@@ -187,54 +234,19 @@ function ProtectedContent() {
                 Quay lại Playground
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-6">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+          )}
+          
+          {session && (
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h3 className="font-medium text-gray-700 mb-2">Thông tin người dùng:</h3>
+              <p className="text-gray-600">
+                Bạn đã đăng nhập với tên: <span className="font-medium">{session.user?.name}</span>
+              </p>
+              <p className="text-gray-600">
+                Email: <span className="font-medium">{session.user?.email}</span>
+              </p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Truy cập bị từ chối</h2>
-            <p className="text-gray-600 mb-6">
-              API key không hợp lệ hoặc đã hết hạn. Vui lòng kiểm tra lại hoặc tạo một key mới.
-            </p>
-            
-            <button
-              onClick={() => router.push("/playground")}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
-            >
-              Quay lại Playground
-            </button>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-// Component chính để render trang protected
-export default async function ProtectedPage() {
-  const session = await getServerSession(authOptions);
-
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
-        <h1 className="text-2xl font-bold">Trang Được Bảo Vệ</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Bạn đã đăng nhập với tên: <span className="font-medium">{session?.user?.name}</span>
-        </p>
-        <p className="text-gray-600 dark:text-gray-400">
-          Email: <span className="font-medium">{session?.user?.email}</span>
-        </p>
-        <div className="pt-4">
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Quay về trang chủ
-          </Link>
+          )}
         </div>
       </div>
     </div>
